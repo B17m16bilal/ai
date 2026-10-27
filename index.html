@@ -43,6 +43,7 @@
   dialog label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
   dialog input, dialog select { width: 100%; background: var(--surface-2); border: 1px solid #333; color: var(--text); border-radius: 10px; padding: 10px; font: inherit; }
   dialog input { direction: ltr; }
+  dialog textarea { width: 100%; background: var(--surface-2); border: 1px solid #333; color: var(--text); border-radius: 10px; padding: 10px; font: inherit; font-size: 13px; direction: ltr; resize: vertical; }
   dialog p { font-size: 13px; color: var(--muted); margin: 10px 0; line-height: 1.6; }
   .hidden { display: none !important; }
   .row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
@@ -86,8 +87,8 @@
   <p id="providerNote"></p>
   <div id="keyBlock">
     <label for="apiKey">مفتاح API</label>
-    <input type="password" id="apiKey" autocomplete="off">
-    <p>يُحفظ المفتاح في هذه الجلسة فقط داخل متصفحك، ولا يُرسل إلا إلى خدمة المزوّد المختار.</p>
+    <textarea id="apiKey" rows="5" autocomplete="off" spellcheck="false"></textarea>
+    <p>ضع مفتاحًا في كل سطر. إذا وصل مفتاح إلى حده المسموح، ينتقل التطبيق تلقائيًا للمفتاح التالي. تُحفظ المفاتيح في هذه الجلسة فقط داخل متصفحك، ولا تُرسل إلا إلى خدمة المزوّد المختار.</p>
   </div>
   <div class="row">
     <button class="btn primary" id="saveSettings">حفظ</button>
@@ -227,6 +228,9 @@
     let lastError = "";
 
     const models = await getModels(pid);
+    const keys = (key || "").split("\n").map((s) => s.trim()).filter(Boolean);
+    if (p.needsKey && !keys.length) throw new Error("لم يتم إدخال أي مفتاح.");
+    for (const key of (keys.length ? keys : [""])) {
     for (const model of models) {
       let url, headers, body;
 
@@ -263,8 +267,9 @@
       const err = data?.error?.message || (typeof data?.error === "string" ? data.error : "") || raw.slice(0, 200);
       lastError = err || `رمز ${res.status}`;
       // 404 يعني أن الاسم غير موجود فنجرب التالي، وأي خطأ آخر نوقف عنده
-      // أخطاء المفتاح (401/403) تتطلب تدخلًا منك، أما غيرها فنجرب النموذج التالي
-      if (res.status === 401 || res.status === 403) break;
+      // 401/403: المفتاح غير صالح، و429: وصل المفتاح للحد المسموح. في الحالتين ننتقل للمفتاح التالي
+      if (res.status === 401 || res.status === 403 || res.status === 429) break;
+    }
     }
     throw new Error("تعذّر الرد: " + lastError);
   }
