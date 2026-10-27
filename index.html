@@ -183,12 +183,31 @@
     history.forEach((m) => addMessage(m.role === "user" ? "user" : "assistant", m.text));
   }
 
+  // ===== قائمة النماذج =====
+  // OpenRouter تغيّر النماذج المجانية باستمرار، لذلك نجلب القائمة الحالية تلقائيًا
+  let openRouterFree = null;
+  async function getModels(pid) {
+    if (pid !== "openrouter") return MODELS[pid];
+    if (openRouterFree) return openRouterFree;
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/models");
+      const json = await res.json();
+      const ids = (json.data || []).map((m) => m.id).filter((id) => id.endsWith(":free"));
+      if (ids.length) {
+        openRouterFree = ids.slice(0, 8);
+        return openRouterFree;
+      }
+    } catch {}
+    return MODELS[pid];
+  }
+
   // ===== استدعاء المزوّد =====
   async function callProvider(pid, key, messages) {
     const p = PROVIDERS[pid];
     let lastError = "";
 
-    for (const model of MODELS[pid]) {
+    const models = await getModels(pid);
+    for (const model of models) {
       let url, headers, body;
 
       if (pid === "gemini") {
@@ -224,7 +243,8 @@
       const err = data?.error?.message || (typeof data?.error === "string" ? data.error : "") || raw.slice(0, 200);
       lastError = err || `رمز ${res.status}`;
       // 404 يعني أن الاسم غير موجود فنجرب التالي، وأي خطأ آخر نوقف عنده
-      if (res.status !== 404) break;
+      // أخطاء المفتاح (401/403) تتطلب تدخلًا منك، أما غيرها فنجرب النموذج التالي
+      if (res.status === 401 || res.status === 403) break;
     }
     throw new Error("تعذّر الرد: " + lastError);
   }
