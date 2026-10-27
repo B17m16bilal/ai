@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://generativelanguage.googleapis.com; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+<title>Astra B</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --bg: #000; --surface: #1e1e1e; --surface-2: #2a2a2a; --text: #ececec; --muted: #9b9b9b; --accent: #2f6fdb; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif; }
+  .app { display: flex; height: 100%; }
+  .sidebar { width: 56px; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px 0; border-left: 1px solid #1a1a1a; }
+  .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--text); cursor: pointer; font-size: 18px; display: grid; place-items: center; }
+  .icon-btn:hover { background: var(--surface-2); }
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; }
+  .brand { font-weight: 600; color: var(--accent); font-size: 18px; }
+  .badge { font-size: 12px; color: var(--muted); border: 1px solid #333; padding: 4px 10px; border-radius: 999px; }
+  #welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 20px; }
+  #welcome h1 { font-size: 30px; font-weight: 400; }
+  #messages { flex: 1; overflow-y: auto; padding: 20px; display: none; }
+  #messages.active { display: block; }
+  .msg { max-width: 760px; margin: 0 auto 18px; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { background: var(--surface); padding: 10px 16px; border-radius: 18px; width: fit-content; max-width: 80%; margin-inline-start: auto; }
+  .msg.error { color: #ff8a8a; }
+  .msg.typing { color: var(--muted); }
+  .composer-wrap { padding: 0 16px 10px; }
+  .composer { max-width: 768px; margin: 0 auto; background: var(--surface); border-radius: 28px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+  .composer textarea { flex: 1; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; font-size: 16px; resize: none; max-height: 160px; padding: 8px; }
+  .round { width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer; background: transparent; color: var(--text); font-size: 20px; display: grid; place-items: center; }
+  .round:hover { background: var(--surface-2); }
+  .round.send { background: var(--accent); color: #fff; }
+  .round:disabled { opacity: .4; cursor: default; }
+  .suggestions { max-width: 768px; margin: 14px auto 24px; display: flex; flex-direction: column; gap: 4px; padding: 0 16px; }
+  .suggestions button { background: transparent; border: 0; color: var(--muted); text-align: right; padding: 10px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 15px; }
+  .suggestions button:hover { background: var(--surface); color: var(--text); }
+  dialog { background: var(--surface); color: var(--text); border: 1px solid #333; border-radius: 14px; padding: 22px; width: min(440px, 92vw); }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog h2 { font-size: 18px; margin-bottom: 14px; }
+  dialog label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  dialog input { width: 100%; background: var(--surface-2); border: 1px solid #333; color: var(--text); border-radius: 10px; padding: 10px; font: inherit; direction: ltr; }
+  dialog p { font-size: 13px; color: var(--muted); margin: 10px 0; line-height: 1.6; }
+  .row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { padding: 9px 16px; border-radius: 10px; border: 1px solid #333; background: var(--surface-2); color: var(--text); cursor: pointer; font: inherit; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { color: #ff8a8a; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <button class="icon-btn" id="newChat" title="محادثة جديدة">✎</button>
+    <button class="icon-btn" id="clearChat" title="مسح المحادثة">🗑</button>
+    <button class="icon-btn" id="openSettings" title="الإعدادات">⚙</button>
+  </aside>
+  <main>
+    <header>
+      <div class="brand">✦ Astra B</div>
+      <div class="badge">مصمم بواسطة مريان بلال</div>
+    </header>
+    <section id="welcome"><h1>من أين نبدأ؟</h1></section>
+    <div id="messages"></div>
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea id="input" rows="1" placeholder="اسأل Astra B"></textarea>
+        <button class="round send" id="send" title="إرسال">➤</button>
+      </div>
+    </div>
+    <div class="suggestions" id="suggestions">
+      <button data-prompt="اكتب لي رسالة احترافية قصيرة">✍ اكتب أو حرّر نصًا</button>
+      <button data-prompt="اشرح لي فكرة معقدة بطريقة بسيطة">💡 اشرح فكرة معقدة</button>
+      <button data-prompt="ساعدني في كتابة كود برمجي وشرحه">💻 ساعدني في البرمجة</button>
+    </div>
+  </main>
+</div>
+
+<dialog id="settings">
+  <h2>الإعدادات</h2>
+  <label for="apiKey">مفتاح Google Gemini API</label>
+  <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
+  <p>يُحفظ المفتاح في هذه الجلسة فقط داخل متصفحك ولا يُرسل إلا إلى خوادم Google.</p>
+  <div class="row">
+    <button class="btn primary" id="saveKey">حفظ</button>
+    <button class="btn danger" id="forgetKey">حذف المفتاح</button>
+    <button class="btn" id="closeSettings">إغلاق</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  // ===== الإعدادات =====
+  // يجرب التطبيق هذه الأسماء بالترتيب، فإذا رفضت Google اسمًا ينتقل تلقائيًا للتالي
+  const MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+  const SYSTEM_PROMPT = "أنت Astra B، مساعد ذكاء اصطناعي صممه المطور مريان بلال. " +
+    "عندما يسألك أحد من أنت أو من صنعك، أجب بأنك Astra B وأن مصممك هو المطور مريان بلال. " +
+    "أجب بالعربية افتراضيًا، إلا إذا كتب المستخدم بلغة أخرى. كن واضحًا ومختصرًا ودقيقًا.";
+  const HISTORY_KEY = "astra_b_history";
+  const KEY_STORE = "astra_b_key";
+
+  const $ = (id) => document.getElementById(id);
+  const welcome = $("welcome"), messagesEl = $("messages"), input = $("input");
+  const sendBtn = $("send"), suggestions = $("suggestions"), settings = $("settings");
+  const apiKeyInput = $("apiKey");
+
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { history = []; }
+
+  const getKey = () => sessionStorage.getItem(KEY_STORE) || "";
+  const saveHistory = () => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch {} };
+
+  function addMessage(role, text, cls = "") {
+    const div = document.createElement("div");
+    div.className = `msg ${role === "user" ? "user" : ""} ${cls}`.trim();
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function showChat() {
+    welcome.style.display = "none";
+    suggestions.style.display = "none";
+    messagesEl.classList.add("active");
+  }
+
+  function renderHistory() {
+    messagesEl.innerHTML = "";
+    if (history.length) showChat();
+    history.forEach((m) => addMessage(m.role === "user" ? "user" : "assistant", m.parts[0].text));
+  }
+
+  // يرسل الطلب إلى النموذج الأول الذي تقبله Google
+  async function callGemini(key, body) {
+    let lastError = "";
+    for (const model of MODELS) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) return data;
+      lastError = data.error?.message || `رمز ${res.status}`;
+      // 404 معناه أن الاسم غير موجود، فنجرب التالي. أي خطأ آخر نوقف فيه
+      if (res.status !== 404) break;
+    }
+    throw new Error("تعذّر الرد: " + lastError);
+  }
+
+  async function ask(text) {
+    const key = getKey();
+    if (!key) { settings.showModal(); apiKeyInput.focus(); return; }
+
+    showChat();
+    addMessage("user", text);
+    history.push({ role: "user", parts: [{ text }] });
+    const typing = addMessage("assistant", "…", "typing");
+    sendBtn.disabled = true;
+
+    try {
+      const data = await callGemini(key, {
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: history
+      });
+      const reply = (data.candidates?.[0]?.content?.parts || [])
+        .map((p) => p.text || "").join("").trim() || "لم أتمكن من توليد رد. حاول مرة أخرى.";
+      typing.remove();
+      addMessage("assistant", reply);
+      history.push({ role: "model", parts: [{ text: reply }] });
+      saveHistory();
+    } catch (err) {
+      typing.remove();
+      addMessage("assistant", err.message || "حدث خطأ غير متوقع.", "error");
+      history.pop();
+      saveHistory();
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  function submit() {
+    const text = input.value.trim();
+    if (!text || sendBtn.disabled) return;
+    input.value = "";
+    autoGrow();
+    ask(text);
+  }
+
+  function autoGrow() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 160) + "px";
+  }
+
+  sendBtn.addEventListener("click", submit);
+  input.addEventListener("input", autoGrow);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+  });
+  suggestions.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-prompt]");
+    if (btn) ask(btn.dataset.prompt);
+  });
+
+  $("newChat").addEventListener("click", () => {
+    history = []; saveHistory();
+    messagesEl.innerHTML = "";
+    messagesEl.classList.remove("active");
+    welcome.style.display = ""; suggestions.style.display = "";
+  });
+  $("clearChat").addEventListener("click", () => {
+    if (confirm("هل تريد مسح المحادثة الحالية؟")) $("newChat").click();
+  });
+  $("openSettings").addEventListener("click", () => {
+    apiKeyInput.value = getKey();
+    settings.showModal();
+  });
+  $("closeSettings").addEventListener("click", () => settings.close());
+  $("saveKey").addEventListener("click", () => {
+    const k = apiKeyInput.value.trim();
+    if (k) sessionStorage.setItem(KEY_STORE, k);
+    settings.close();
+  });
+  $("forgetKey").addEventListener("click", () => {
+    sessionStorage.removeItem(KEY_STORE);
+    apiKeyInput.value = "";
+  });
+
+  renderHistory();
+  autoGrow();
+})();
+</script>
+</body>
+</html>
