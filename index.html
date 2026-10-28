@@ -9,126 +9,351 @@
 <title>Astra B</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --bg: #000; --surface: #1e1e1e; --surface-2: #2a2a2a; --text: #ececec; --muted: #9b9b9b; --accent: #2f6fdb; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif; }
+  :root {
+    --bg: #212121;
+    --sidebar: #171717;
+    --surface: #2f2f2f;
+    --surface-hover: #2a2a2a;
+    --text: #ececec;
+    --muted: #8e8e8e;
+    --border: #2f2f2f;
+    --accent: #10a37f;
+    --danger: #ff8a8a;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif; font-size: 15px; }
+  body { overflow: hidden; }
+  button { font: inherit; color: inherit; }
+
   .app { display: flex; height: 100%; }
-  .sidebar { width: 56px; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px 0; border-left: 1px solid #1a1a1a; }
-  .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--text); cursor: pointer; font-size: 18px; display: grid; place-items: center; }
-  .icon-btn:hover { background: var(--surface-2); }
-  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; }
-  .brand { font-weight: 600; color: var(--accent); font-size: 18px; }
-  .badge { font-size: 12px; color: var(--muted); border: 1px solid #333; padding: 4px 10px; border-radius: 999px; }
-  #welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 20px; }
-  #welcome h1 { font-size: 30px; font-weight: 400; }
-  #messages { flex: 1; overflow-y: auto; padding: 20px; display: none; }
+
+  /* ===== الشريط الجانبي ===== */
+  .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; padding: 10px; flex-shrink: 0; }
+  .side-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .new-chat { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    background: transparent; border: 1px solid #3a3a3a; cursor: pointer; }
+  .new-chat:hover { background: var(--surface-hover); }
+  .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; cursor: pointer;
+    display: grid; place-items: center; color: var(--text); font-size: 18px; flex-shrink: 0; }
+  .icon-btn:hover { background: var(--surface-hover); }
+  .section-label { font-size: 12px; color: var(--muted); padding: 14px 10px 6px; }
+  .chat-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .chat-item { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+  .chat-item:hover, .chat-item.active { background: var(--surface-hover); }
+  .chat-item.active { background: var(--surface); }
+  .chat-title { flex: 1; text-align: right; background: transparent; border: 0; padding: 9px 10px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  .chat-del { opacity: 0; background: transparent; border: 0; cursor: pointer; padding: 6px 8px; border-radius: 8px; color: var(--muted); }
+  .chat-item:hover .chat-del, .chat-item.active .chat-del { opacity: 1; }
+  .chat-del:hover { color: var(--danger); }
+  .empty-list { font-size: 13px; color: var(--muted); padding: 10px; }
+
+  /* ===== المحتوى الرئيسي ===== */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+  .brand { font-weight: 600; font-size: 17px; }
+  .badge { font-size: 12px; color: var(--muted); border: 1px solid #3a3a3a; padding: 3px 10px; border-radius: 999px; margin-inline-start: auto; }
+
+  #scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+
+  /* الشاشة الترحيبية */
+  #welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 20px; }
+  #welcome h1 { font-size: 28px; font-weight: 500; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: min(760px, 100%); }
+  .card { text-align: right; background: transparent; border: 1px solid #3a3a3a; border-radius: 14px; padding: 14px; cursor: pointer; line-height: 1.6; font-size: 14px; color: var(--text); }
+  .card:hover { background: var(--surface-hover); }
+  .card small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  /* الرسائل */
+  #messages { display: none; max-width: 780px; margin: 0 auto; padding: 24px 16px 12px; }
   #messages.active { display: block; }
-  .msg { max-width: 960px; margin: 0 auto 18px; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; }
-  .msg.user { background: var(--surface); padding: 10px 16px; border-radius: 18px; width: fit-content; max-width: 80%; margin-inline-start: auto; }
-  .msg.error { color: #ff8a8a; }
-  .msg.typing { color: var(--muted); }
-  .composer-wrap { padding: 0 16px 10px; }
-  .composer { max-width: 960px; margin: 0 auto; background: var(--surface); border-radius: 28px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
-  .composer textarea { flex: 1; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; font-size: 16px; resize: none; max-height: 160px; padding: 8px; }
-  .round { width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer; background: transparent; color: var(--text); font-size: 20px; display: grid; place-items: center; }
-  .round:hover { background: var(--surface-2); }
-  .round.send { background: var(--accent); color: #fff; }
-  .round:disabled { opacity: .4; cursor: default; }
-  .suggestions { max-width: 960px; margin: 14px auto 24px; display: flex; flex-direction: column; gap: 4px; padding: 0 16px; }
-  .suggestions button { background: transparent; border: 0; color: var(--muted); text-align: right; padding: 10px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 15px; }
-  .suggestions button:hover { background: var(--surface); color: var(--text); }
+  .row { display: flex; gap: 12px; margin-bottom: 22px; }
+  .row.user { justify-content: flex-start; }
+  .row.user .bubble { background: var(--surface); padding: 10px 16px; border-radius: 22px; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; line-height: 1.75; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: grid; place-items: center;
+    font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0; margin-top: 2px; }
+  .assistant .body { flex: 1; min-width: 0; }
+  .assistant .text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.85; padding-top: 3px; }
+  .actions { display: flex; gap: 4px; margin-top: 6px; }
+  .actions button { background: transparent; border: 0; cursor: pointer; color: var(--muted); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
+  .actions button:hover { background: var(--surface-hover); color: var(--text); }
+  .error .text { color: var(--danger); }
+  .typing { color: var(--muted); }
+  .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+
+  /* صندوق الكتابة */
+  .composer-wrap { padding: 8px 16px 6px; }
+  .composer { max-width: 780px; margin: 0 auto; background: var(--surface); border-radius: 26px; display: flex; align-items: flex-end; gap: 6px; padding: 8px 8px 8px 12px; }
+  .composer textarea { flex: 1; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; font-size: 16px;
+    resize: none; max-height: 200px; padding: 9px 6px; line-height: 1.5; }
+  .composer textarea::placeholder { color: var(--muted); }
+  .send { width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; background: #ececec; color: #111;
+    display: grid; place-items: center; font-size: 16px; flex-shrink: 0; margin-bottom: 2px; }
+  .send:disabled { opacity: .35; cursor: default; }
+  .disclaimer { text-align: center; font-size: 12px; color: var(--muted); padding: 8px 0 4px; }
+
+  .overlay { display: none; }
+
+  /* الجوال */
+  @media (max-width: 760px) {
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; transform: translateX(100%); transition: transform .2s ease; box-shadow: 0 0 30px #000; }
+    .sidebar.open { transform: translateX(0); }
+    .overlay.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 15; }
+    .cards { grid-template-columns: 1fr; }
+    .badge { display: none; }
+    #welcome h1 { font-size: 22px; }
+  }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
-    <button class="icon-btn" id="newChat" title="محادثة جديدة">✎</button>
-    <button class="icon-btn" id="clearChat" title="مسح المحادثة">🗑</button>
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <button class="new-chat" id="newChat">
+        <span>✎</span><span>محادثة جديدة</span>
+      </button>
+    </div>
+    <div class="section-label">المحادثات</div>
+    <div class="chat-list" id="chatList"></div>
   </aside>
+  <div class="overlay" id="overlay"></div>
+
   <main>
     <header>
-      <div class="brand">✦ Astra B</div>
+      <button class="icon-btn" id="toggleSide" title="القائمة">☰</button>
+      <div class="brand">Astra B</div>
       <div class="badge">مصمم بواسطة مريان بلال</div>
     </header>
-    <section id="welcome"><h1>من أين نبدأ؟</h1></section>
-    <div id="messages"></div>
+
+    <div id="scroll">
+      <section id="welcome">
+        <h1>من أين نبدأ؟</h1>
+        <div class="cards">
+          <button class="card" data-prompt="اكتب لي رسالة احترافية قصيرة">✍ اكتب أو حرّر نصًا<small>رسائل ومنشورات وردود مهذبة</small></button>
+          <button class="card" data-prompt="اشرح لي فكرة معقدة بطريقة بسيطة">💡 اشرح فكرة معقدة<small>بلغة واضحة ومع أمثلة</small></button>
+          <button class="card" data-prompt="ساعدني في كتابة كود برمجي وشرحه">💻 ساعدني في البرمجة<small>كتابة كود وإصلاح الأخطاء</small></button>
+        </div>
+      </section>
+      <div id="messages"></div>
+    </div>
+
     <div class="composer-wrap">
       <div class="composer">
         <textarea id="input" rows="1" placeholder="اسأل Astra B"></textarea>
-        <button class="round send" id="send" title="إرسال">➤</button>
+        <button class="send" id="send" title="إرسال">↑</button>
       </div>
-    </div>
-    <div class="suggestions" id="suggestions">
-      <button data-prompt="اكتب لي رسالة احترافية قصيرة">✍ اكتب أو حرّر نصًا</button>
-      <button data-prompt="اشرح لي فكرة معقدة بطريقة بسيطة">💡 اشرح فكرة معقدة</button>
-      <button data-prompt="ساعدني في كتابة كود برمجي وشرحه">💻 ساعدني في البرمجة</button>
+      <div class="disclaimer">Astra B قد يخطئ. تحقق من المعلومات المهمة.</div>
     </div>
   </main>
 </div>
 
 <script>
 (() => {
-  // رابط الـ Worker الذي يحمل المفاتيح على الخادم. لا توجد مفاتيح في هذا الملف
   const WORKER_URL = "https://astra-b-api.c9824139.workers.dev";
-  const HISTORY_KEY = "astra_b_history_v3";
+  const STORE_KEY = "astra_b_chats_v1";
+  const MAX_CONTEXT = 30;
 
   const $ = (id) => document.getElementById(id);
-  const welcome = $("welcome"), messagesEl = $("messages"), input = $("input");
-  const sendBtn = $("send"), suggestions = $("suggestions");
+  const sidebar = $("sidebar"), overlay = $("overlay"), chatList = $("chatList");
+  const welcome = $("welcome"), messagesEl = $("messages"), scroll = $("scroll");
+  const input = $("input"), sendBtn = $("send");
 
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { history = []; }
+  // ===== التخزين =====
+  let state = { chats: [], currentId: null };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if (saved && Array.isArray(saved.chats)) state = saved;
+  } catch {}
 
-  const saveHistory = () => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch {} };
+  const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {} };
+  const current = () => state.chats.find((c) => c.id === state.currentId) || null;
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  function addMessage(role, text, cls = "") {
-    const div = document.createElement("div");
-    div.className = `msg ${role === "user" ? "user" : ""} ${cls}`.trim();
-    div.textContent = text; // textContent: لا يتم تنفيذ أي HTML
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return div;
+  // ===== الشريط الجانبي =====
+  function renderSidebar() {
+    chatList.innerHTML = "";
+    if (!state.chats.length) {
+      const e = document.createElement("div");
+      e.className = "empty-list";
+      e.textContent = "لا توجد محادثات بعد";
+      chatList.appendChild(e);
+      return;
+    }
+    state.chats.forEach((c) => {
+      const item = document.createElement("div");
+      item.className = "chat-item" + (c.id === state.currentId ? " active" : "");
+
+      const title = document.createElement("button");
+      title.className = "chat-title";
+      title.textContent = c.title;
+      title.addEventListener("click", () => { openChat(c.id); closeSidebar(); });
+
+      const del = document.createElement("button");
+      del.className = "chat-del";
+      del.title = "حذف";
+      del.textContent = "✕";
+      del.addEventListener("click", (e) => { e.stopPropagation(); deleteChat(c.id); });
+
+      item.append(title, del);
+      chatList.appendChild(item);
+    });
   }
 
-  function showChat() {
-    welcome.style.display = "none";
-    suggestions.style.display = "none";
-    messagesEl.classList.add("active");
+  function newChat() {
+    state.currentId = null;
+    save();
+    renderAll();
+    input.focus();
   }
 
-  function renderHistory() {
+  function openChat(id) {
+    state.currentId = id;
+    save();
+    renderAll();
+  }
+
+  function deleteChat(id) {
+    if (!confirm("حذف هذه المحادثة؟")) return;
+    state.chats = state.chats.filter((c) => c.id !== id);
+    if (state.currentId === id) state.currentId = null;
+    save();
+    renderAll();
+  }
+
+  // ===== عرض الرسائل =====
+  function renderMessages() {
     messagesEl.innerHTML = "";
-    if (history.length) showChat();
-    history.forEach((m) => addMessage(m.role === "user" ? "user" : "assistant", m.text));
+    const chat = current();
+    if (!chat || !chat.messages.length) {
+      messagesEl.classList.remove("active");
+      welcome.style.display = "";
+      return;
+    }
+    welcome.style.display = "none";
+    messagesEl.classList.add("active");
+    chat.messages.forEach((m) => messagesEl.appendChild(buildRow(m.role, m.text, m.error)));
+    scrollToEnd();
   }
 
+  function buildRow(role, text, isError) {
+    const row = document.createElement("div");
+
+    if (role === "user") {
+      row.className = "row user";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      return row;
+    }
+
+    row.className = "row assistant" + (isError ? " error" : "");
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "B";
+
+    const body = document.createElement("div");
+    body.className = "body";
+    const content = document.createElement("div");
+    content.className = "text";
+    content.textContent = text;
+    body.appendChild(content);
+
+    if (!isError) {
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      const copy = document.createElement("button");
+      copy.textContent = "⧉ نسخ";
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          copy.textContent = "✓ تم النسخ";
+          setTimeout(() => (copy.textContent = "⧉ نسخ"), 1500);
+        } catch {}
+      });
+      actions.appendChild(copy);
+      body.appendChild(actions);
+    }
+
+    row.append(avatar, body);
+    return row;
+  }
+
+  function addRow(role, text, isError) {
+    messagesEl.classList.add("active");
+    welcome.style.display = "none";
+    const row = buildRow(role, text, isError);
+    messagesEl.appendChild(row);
+    scrollToEnd();
+    return row;
+  }
+
+  function showTyping() {
+    const row = document.createElement("div");
+    row.className = "row assistant";
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "B";
+    const body = document.createElement("div");
+    body.className = "body";
+    const t = document.createElement("div");
+    t.className = "text typing";
+    const dots = document.createElement("span");
+    dots.className = "dots";
+    t.appendChild(dots);
+    body.appendChild(t);
+    row.append(avatar, body);
+    messagesEl.appendChild(row);
+    scrollToEnd();
+    return row;
+  }
+
+  function scrollToEnd() {
+    scroll.scrollTop = scroll.scrollHeight;
+  }
+
+  function renderAll() {
+    renderSidebar();
+    renderMessages();
+  }
+
+  // ===== الإرسال =====
   async function ask(text) {
-    showChat();
-    addMessage("user", text);
-    history.push({ role: "user", text });
-    const typing = addMessage("assistant", "…", "typing");
+    if (!current()) {
+      const chat = { id: uid(), title: text.slice(0, 40), messages: [] };
+      state.chats.unshift(chat);
+      state.currentId = chat.id;
+      renderSidebar();
+    }
+    const chat = current();
+    chat.messages.push({ role: "user", text });
+    save();
+    addRow("user", text);
+    const typing = showTyping();
     sendBtn.disabled = true;
 
     try {
       const res = await fetch(WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-30) })
+        body: JSON.stringify({ messages: chat.messages.slice(-MAX_CONTEXT) })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `تعذّر الرد (رمز ${res.status}).`);
 
       typing.remove();
-      addMessage("assistant", data.reply);
-      history.push({ role: "assistant", text: data.reply });
-      saveHistory();
+      chat.messages.push({ role: "assistant", text: data.reply });
+      save();
+      addRow("assistant", data.reply);
     } catch (err) {
       typing.remove();
-      addMessage("assistant", err.message || "تعذّر الاتصال بالخدمة. حاول مرة أخرى.", "error");
-      history.pop();
-      saveHistory();
+      chat.messages.pop(); // نحذف رسالة المستخدم الفاشلة لتتمكن من إعادة الإرسال
+      save();
+      addRow("assistant", err.message || "تعذّر الاتصال بالخدمة. حاول مرة أخرى.", true);
     } finally {
       sendBtn.disabled = false;
+      renderSidebar();
     }
   }
 
@@ -142,30 +367,30 @@
 
   function autoGrow() {
     input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 160) + "px";
+    input.style.height = Math.min(input.scrollHeight, 200) + "px";
   }
 
+  // ===== الجوال =====
+  function openSidebar() { sidebar.classList.add("open"); overlay.classList.add("show"); }
+  function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("show"); }
+
+  // ===== الأحداث =====
   sendBtn.addEventListener("click", submit);
   input.addEventListener("input", autoGrow);
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
   });
-  suggestions.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-prompt]");
-    if (btn) ask(btn.dataset.prompt);
+  welcome.addEventListener("click", (e) => {
+    const card = e.target.closest("button[data-prompt]");
+    if (card) ask(card.dataset.prompt);
   });
+  $("newChat").addEventListener("click", () => { newChat(); closeSidebar(); });
+  $("toggleSide").addEventListener("click", () => {
+    sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener("click", closeSidebar);
 
-  $("newChat").addEventListener("click", () => {
-    history = []; saveHistory();
-    messagesEl.innerHTML = "";
-    messagesEl.classList.remove("active");
-    welcome.style.display = ""; suggestions.style.display = "";
-  });
-  $("clearChat").addEventListener("click", () => {
-    if (confirm("هل تريد مسح المحادثة الحالية؟")) $("newChat").click();
-  });
-
-  renderHistory();
+  renderAll();
   autoGrow();
 })();
 </script>
