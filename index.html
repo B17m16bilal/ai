@@ -576,12 +576,34 @@
     toast(m.rating === "up" ? "شكرًا على تقييمك" : m.rating === "down" ? "سنحاول التحسين" : "تم إلغاء التقييم");
   }
 
+  // أفضل صوت عربي متاح في المتصفح، ويفضّل الأصوات العصبية (Natural / Neural / Online) مثل أصوات Edge
+  let arVoice = null;
+  function pickVoice() {
+    const voices = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("ar"));
+    if (!voices.length) return null;
+    return voices.find((v) => /natural|neural|online/i.test(v.name)) || voices[0];
+  }
+  if ("speechSynthesis" in window) {
+    arVoice = pickVoice();
+    speechSynthesis.onvoiceschanged = () => { arVoice = pickVoice(); };
+  }
+
   function speak(text) {
     if (!("speechSynthesis" in window)) return;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/```[\s\S]*?```/g, " "));
-    u.lang = "ar-SA";
-    speechSynthesis.speak(u);
+    const clean = text.replace(/```[\s\S]*?```/g, " ").replace(/[*#`_>]/g, " ").replace(/\s+/g, " ").trim();
+    // تقسيم النص إلى جمل، لأن قراءة الجمل منفصلة تبدو أطبع وأوضح
+    const sentences = clean.match(/[^.!?؟۔]+[.!?؟۔]?/g) || [clean];
+    sentences.forEach((part) => {
+      const seg = part.trim();
+      if (!seg) return;
+      const u = new SpeechSynthesisUtterance(seg);
+      u.lang = "ar-SA";
+      if (arVoice) u.voice = arVoice;
+      u.rate = 0.95;
+      u.pitch = 1.0;
+      speechSynthesis.speak(u);
+    });
   }
 
   function showTyping() {
