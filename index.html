@@ -5,107 +5,162 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://astra-b-api.c9824139.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://astra-b-api.c9824139.workers.dev; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <title>Astra B</title>
 <link rel="icon" href="icon.png" type="image/png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #212121;
-    --sidebar: #171717;
-    --surface: #2f2f2f;
-    --surface-hover: #2a2a2a;
-    --text: #ececec;
-    --muted: #8e8e8e;
-    --border: #2f2f2f;
-    --accent: #10a37f;
-    --danger: #ff8a8a;
+    --bg: #0b0b10;
+    --sidebar: #111118;
+    --surface: #1b1b26;
+    --surface-hover: #23232f;
+    --text: #ecebff;
+    --muted: #8b8aa3;
+    --border: #2a2a38;
+    --accent: #8b7cf6;
+    --accent-2: #5b8cff;
+    --danger: #ff8a9a;
   }
   html, body { height: 100%; background: var(--bg); color: var(--text);
     font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif; font-size: 15px; }
   body { overflow: hidden; }
-  button { font: inherit; color: inherit; }
+  button, select, textarea, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
 
   .app { display: flex; height: 100%; }
 
   /* ===== الشريط الجانبي ===== */
-  .sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; padding: 10px; flex-shrink: 0; }
-  .side-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-  .new-chat { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
-    background: transparent; border: 1px solid #3a3a3a; cursor: pointer; }
+  .sidebar { width: 270px; background: var(--sidebar); display: flex; flex-direction: column; padding: 10px; flex-shrink: 0; border-inline-start: 1px solid var(--border); }
+  .new-chat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px;
+    background: transparent; border: 1px solid var(--border); width: 100%; }
   .new-chat:hover { background: var(--surface-hover); }
-  .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; cursor: pointer;
-    display: grid; place-items: center; color: var(--text); font-size: 18px; flex-shrink: 0; }
-  .icon-btn:hover { background: var(--surface-hover); }
-  .section-label { font-size: 12px; color: var(--muted); padding: 14px 10px 6px; }
+  .search { width: 100%; margin: 10px 0 4px; background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 8px 10px; outline: none; }
+  .search::placeholder { color: var(--muted); }
+  .section-label { font-size: 12px; color: var(--muted); padding: 12px 8px 6px; }
   .chat-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-  .chat-item { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+  .chat-item { display: flex; align-items: center; gap: 2px; border-radius: 10px; }
   .chat-item:hover, .chat-item.active { background: var(--surface-hover); }
   .chat-item.active { background: var(--surface); }
-  .chat-title { flex: 1; text-align: right; background: transparent; border: 0; padding: 9px 10px; cursor: pointer;
+  .chat-title { flex: 1; text-align: right; background: transparent; border: 0; padding: 9px 10px; min-width: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
-  .chat-del { opacity: 0; background: transparent; border: 0; cursor: pointer; padding: 6px 8px; border-radius: 8px; color: var(--muted); }
-  .chat-item:hover .chat-del, .chat-item.active .chat-del { opacity: 1; }
-  .chat-del:hover { color: var(--danger); }
+  .chat-act { background: transparent; border: 0; padding: 5px 7px; border-radius: 8px; color: var(--muted); opacity: 0; font-size: 12px; }
+  .chat-item:hover .chat-act, .chat-item.active .chat-act { opacity: 1; }
+  .chat-act.on { opacity: 1; }
+  .chat-act:hover { background: var(--surface-hover); color: var(--text); }
+  .chat-act.del:hover { color: var(--danger); }
   .empty-list { font-size: 13px; color: var(--muted); padding: 10px; }
+  .side-foot { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+  .side-foot button { background: transparent; border: 0; text-align: right; padding: 9px 10px; border-radius: 10px; color: var(--muted); font-size: 14px; }
+  .side-foot button:hover { background: var(--surface-hover); color: var(--text); }
 
-  /* ===== المحتوى الرئيسي ===== */
+  /* ===== المحتوى ===== */
   main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
-  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
-  .brand { font-weight: 600; font-size: 17px; }
-  .badge { font-size: 12px; color: var(--muted); border: 1px solid #3a3a3a; padding: 3px 10px; border-radius: 999px; margin-inline-start: auto; }
+  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; }
+  .brand img { width: 22px; height: 22px; border-radius: 6px; }
+  .header-tools { display: flex; align-items: center; gap: 8px; margin-inline-start: auto; }
+  .mode-sel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; font-size: 13px; outline: none; }
+  .ghost { background: transparent; border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; font-size: 13px; color: var(--muted); }
+  .ghost:hover { background: var(--surface-hover); color: var(--text); }
+  .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; display: grid; place-items: center; font-size: 18px; color: var(--text); }
+  .icon-btn:hover { background: var(--surface-hover); }
 
   #scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
 
   /* الشاشة الترحيبية */
   #welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 20px; }
   #welcome h1 { font-size: 28px; font-weight: 500; }
-  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: min(760px, 100%); }
-  .card { text-align: right; background: transparent; border: 1px solid #3a3a3a; border-radius: 14px; padding: 14px; cursor: pointer; line-height: 1.6; font-size: 14px; color: var(--text); }
-  .card:hover { background: var(--surface-hover); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: min(780px, 100%); }
+  .card { text-align: right; background: transparent; border: 1px solid var(--border); border-radius: 14px; padding: 14px; line-height: 1.6; font-size: 14px; color: var(--text); }
+  .card:hover { background: var(--surface-hover); border-color: var(--accent); }
   .card small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .lib-link { background: transparent; border: 0; color: var(--accent); font-size: 14px; }
 
   /* الرسائل */
-  #messages { display: none; max-width: 780px; margin: 0 auto; padding: 24px 16px 12px; }
+  #messages { display: none; max-width: 800px; margin: 0 auto; padding: 24px 16px 12px; }
   #messages.active { display: block; }
   .row { display: flex; gap: 12px; margin-bottom: 22px; }
   .row.user { justify-content: flex-start; }
-  .row.user .bubble { background: var(--surface); padding: 10px 16px; border-radius: 22px; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; line-height: 1.75; }
+  .user-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; max-width: 80%; }
+  .bubble { background: var(--surface); padding: 10px 16px; border-radius: 22px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.75; }
+  .file-tag { font-size: 12px; color: var(--muted); background: var(--surface); padding: 3px 10px; border-radius: 999px; }
+  .edit-box { width: 100%; min-width: 280px; background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 10px; outline: none; resize: vertical; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex-shrink: 0; margin-top: 2px; }
   .avatar img { width: 100%; height: 100%; display: block; }
-  .avatar { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
-    font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0; margin-top: 2px; }
   .assistant .body { flex: 1; min-width: 0; }
-  .assistant .text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.85; padding-top: 3px; }
-  .actions { display: flex; gap: 4px; margin-top: 6px; }
-  .actions button { background: transparent; border: 0; cursor: pointer; color: var(--muted); padding: 4px 8px; border-radius: 8px; font-size: 12px; }
-  .actions button:hover { background: var(--surface-hover); color: var(--text); }
+  .assistant .text { line-height: 1.85; padding-top: 3px; word-wrap: break-word; }
+  .plain { white-space: pre-wrap; }
+  .actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .mini { background: transparent; border: 0; padding: 4px 8px; border-radius: 8px; color: var(--muted); font-size: 12px; }
+  .mini:hover { background: var(--surface-hover); color: var(--text); }
+  .mini.on { color: var(--accent); }
+  .mini.primary { background: var(--accent); color: #fff; }
   .error .text { color: var(--danger); }
   .typing { color: var(--muted); }
   .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
   @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--text); }
+  .chip:hover { border-color: var(--accent); background: var(--surface-hover); }
+
+  /* الأكواد والقوائم */
+  .codebox { margin: 10px 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #0f0f15; }
+  .cb-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--surface); font-size: 12px; color: var(--muted); direction: ltr; }
+  .codebox pre { direction: ltr; text-align: left; padding: 12px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+  .checklist { display: flex; flex-direction: column; gap: 6px; margin: 4px 0; }
+  .check-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+  .check-item:hover { background: var(--surface-hover); }
+  .check-item.done span { text-decoration: line-through; color: var(--muted); }
+  .check-item input { margin-top: 5px; accent-color: var(--accent); }
 
   /* صندوق الكتابة */
-  .composer-wrap { padding: 8px 16px 6px; }
-  .composer { max-width: 780px; margin: 0 auto; background: var(--surface); border-radius: 26px; display: flex; align-items: flex-end; gap: 6px; padding: 8px 8px 8px 12px; }
-  .composer textarea { flex: 1; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; font-size: 16px;
-    resize: none; max-height: 200px; padding: 9px 6px; line-height: 1.5; }
+  .composer-wrap { padding: 8px 16px 6px; position: relative; }
+  .hint { display: none; position: absolute; bottom: calc(100% - 4px); inset-inline: 16px; max-width: 800px; margin: 0 auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px; z-index: 5; }
+  .hint.show { display: block; }
+  .hint-item { display: flex; justify-content: space-between; width: 100%; background: transparent; border: 0; padding: 8px 10px; border-radius: 10px; }
+  .hint-item:hover { background: var(--surface-hover); }
+  .hint-item small { color: var(--muted); }
+  .file-chip { max-width: 800px; margin: 0 auto 6px; display: none; }
+  .file-chip.show { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .file-chip button { background: transparent; border: 0; color: var(--muted); }
+  .composer { max-width: 800px; margin: 0 auto; background: var(--surface); border-radius: 26px; display: flex; align-items: flex-end; gap: 4px; padding: 8px; }
+  .composer textarea { flex: 1; background: transparent; border: 0; outline: none; resize: none; max-height: 200px; padding: 9px 6px; line-height: 1.5; font-size: 16px; }
   .composer textarea::placeholder { color: var(--muted); }
-  .send { width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; background: #ececec; color: #111;
-    display: grid; place-items: center; font-size: 16px; flex-shrink: 0; margin-bottom: 2px; }
+  .tool { width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; display: grid; place-items: center; font-size: 17px; color: var(--muted); flex-shrink: 0; }
+  .tool:hover { background: var(--surface-hover); color: var(--text); }
+  .tool.on { color: #ff6b8b; background: var(--surface-hover); }
+  .send { width: 34px; height: 34px; border-radius: 50%; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
   .send:disabled { opacity: .35; cursor: default; }
   .disclaimer { text-align: center; font-size: 12px; color: var(--muted); padding: 8px 0 4px; }
 
+  /* المكتبة */
+  dialog { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: min(520px, 94vw); max-height: 80vh; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog h2 { font-size: 18px; margin-bottom: 12px; }
+  .lib-cat { font-size: 12px; color: var(--accent); margin: 12px 0 6px; }
+  .lib-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; background: transparent; border: 0; padding: 9px 10px; border-radius: 10px; text-align: right; }
+  .lib-item:hover { background: var(--surface-hover); }
+  .lib-item small { color: var(--muted); font-size: 12px; }
+  .lib-list { overflow-y: auto; max-height: 55vh; }
+  .dlg-close { margin-top: 12px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; }
+
+  /* الإشعارات */
+  .toast { position: fixed; bottom: 96px; inset-inline-start: 50%; transform: translateX(50%) translateY(20px); background: #2a2a38; color: var(--text);
+    padding: 9px 16px; border-radius: 12px; opacity: 0; transition: all .25s ease; pointer-events: none; z-index: 50; font-size: 13px; }
+  .toast.show { opacity: 1; transform: translateX(50%) translateY(0); }
+
   .overlay { display: none; }
 
-  /* ===== شاشة الافتتاح (3 ثوانٍ) ===== */
+  /* ===== شاشة الافتتاح ===== */
   #splash { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px; cursor: pointer; transition: opacity .6s ease, visibility .6s; }
   #splash.out { opacity: 0; visibility: hidden; }
   #splash .mark-wrap { animation: glow 2s ease-in-out .9s infinite; border-radius: 50%; }
-  #splash .mark { display: block; width: min(52vw, 240px); mix-blend-mode: screen;
-    animation: markIn 1s cubic-bezier(.2,.8,.2,1) .15s both; }
-  #splash .word { display: block; width: min(70vw, 360px); mix-blend-mode: screen;
-    animation: wordIn .9s ease 1.1s both; }
+  #splash .mark { display: block; width: min(52vw, 240px); mix-blend-mode: screen; animation: markIn 1s cubic-bezier(.2,.8,.2,1) .15s both; }
+  #splash .word { display: block; width: min(70vw, 360px); mix-blend-mode: screen; animation: wordIn .9s ease 1.1s both; }
   @keyframes markIn {
     0%   { opacity: 0; transform: scale(.55) rotate(-10deg); filter: blur(14px); }
     65%  { opacity: 1; transform: scale(1.05) rotate(0); filter: blur(0); }
@@ -120,14 +175,15 @@
     100% { opacity: 1; transform: none; filter: blur(0); }
   }
 
-  /* الجوال */
+  /* ===== الجوال ===== */
   @media (max-width: 760px) {
-    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; transform: translateX(100%); transition: transform .2s ease; box-shadow: 0 0 30px #000; }
+    .sidebar { position: fixed; inset: 0 0 0 auto; z-index: 20; transform: translateX(100%); transition: transform .2s ease; box-shadow: 0 0 30px #000; }
     .sidebar.open { transform: translateX(0); }
     .overlay.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 15; }
     .cards { grid-template-columns: 1fr; }
     .badge { display: none; }
     #welcome h1 { font-size: 22px; }
+    .user-wrap { max-width: 92%; }
   }
 </style>
 </head>
@@ -139,21 +195,33 @@
 
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="side-top">
-      <button class="new-chat" id="newChat">
-        <span>✎</span><span>محادثة جديدة</span>
-      </button>
-    </div>
-    <div class="section-label">المحادثات</div>
+    <button class="new-chat" id="newChat"><span>✎</span><span>محادثة جديدة</span></button>
+    <input class="search" id="searchInput" type="search" placeholder="بحث في المحادثات">
     <div class="chat-list" id="chatList"></div>
+    <div class="side-foot">
+      <button id="libBtn">📚 مكتبة الأوامر</button>
+      <button id="exportMd">⤓ تصدير .md</button>
+      <button id="exportTxt">⤓ تصدير .txt</button>
+    </div>
   </aside>
   <div class="overlay" id="overlay"></div>
 
   <main>
     <header>
       <button class="icon-btn" id="toggleSide" title="القائمة">☰</button>
-      <div class="brand">Astra B</div>
-      <div class="badge">مصمم بواسطة مريان بلال</div>
+      <div class="brand"><img src="icon.png" alt="">Astra B</div>
+      <div class="header-tools">
+        <select class="mode-sel" id="modeSel" title="أسلوب الرد">
+          <option value="default">عادي</option>
+          <option value="short">مختصر</option>
+          <option value="detailed">مفصل</option>
+          <option value="professional">احترافي</option>
+          <option value="simple">مبسّط</option>
+          <option value="tutor">معلّم</option>
+        </select>
+        <button class="ghost" id="summaryBtn" title="تلخيص المحادثة">📝 لخّص</button>
+        <span class="badge" style="font-size:12px;color:var(--muted);border:1px solid var(--border);padding:3px 10px;border-radius:999px;">مصمم بواسطة مريان بلال</span>
+      </div>
     </header>
 
     <div id="scroll">
@@ -164,13 +232,20 @@
           <button class="card" data-prompt="اشرح لي فكرة معقدة بطريقة بسيطة">💡 اشرح فكرة معقدة<small>بلغة واضحة ومع أمثلة</small></button>
           <button class="card" data-prompt="ساعدني في كتابة كود برمجي وشرحه">💻 ساعدني في البرمجة<small>كتابة كود وإصلاح الأخطاء</small></button>
         </div>
+        <button class="lib-link" id="libLink">📚 تصفح مكتبة الأوامر الجاهزة</button>
       </section>
       <div id="messages"></div>
     </div>
 
     <div class="composer-wrap">
+      <div class="hint" id="hint"></div>
+      <div class="file-chip" id="fileChip"></div>
       <div class="composer">
-        <textarea id="input" rows="1" placeholder="اسأل Astra B"></textarea>
+        <button class="tool" id="attachBtn" title="إرفاق ملف نصي">📎</button>
+        <input type="file" id="fileInput" accept=".txt,.md,.csv,.json,.js,.py,.html,.css,.xml,.log,.ts" hidden>
+        <textarea id="input" rows="1" placeholder="اسأل Astra B، أو اكتب / لعرض الأوامر"></textarea>
+        <button class="tool" id="micBtn" title="إملاء صوتي">🎙</button>
+        <button class="tool" id="improveBtn" title="حسّن النص">✨</button>
         <button class="send" id="send" title="إرسال">↑</button>
       </div>
       <div class="disclaimer">Astra B قد يخطئ. تحقق من المعلومات المهمة.</div>
@@ -178,66 +253,120 @@
   </main>
 </div>
 
+<dialog id="library">
+  <h2>مكتبة الأوامر</h2>
+  <div class="lib-list" id="libList"></div>
+  <button class="dlg-close" id="libClose">إغلاق</button>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
 <script>
 (() => {
   const WORKER_URL = "https://astra-b-api.c9824139.workers.dev";
-  const STORE_KEY = "astra_b_chats_v1";
-  const MAX_CONTEXT = 30;
+  const STORE_KEY = "astra_b_chats_v2";
+  const MAX_FILE = 40000;
+
+  const LIBRARY = [
+    { cat: "البرمجة", title: "شرح وإصلاح كود", prompt: "اشرح هذا الكود وأصلح أخطاءه إن وجدت:\n" },
+    { cat: "البرمجة", title: "مراجعة كود", prompt: "راجع هذا الكود واقترح تحسينات للأداء والأمان:\n" },
+    { cat: "الكتابة", title: "رسالة رسمية", prompt: "اكتب رسالة رسمية قصيرة إلى: " },
+    { cat: "الكتابة", title: "منشور لوسائل التواصل", prompt: "اكتب منشورًا جذابًا عن: " },
+    { cat: "التعلم", title: "شرح مبسّط", prompt: "اشرح لي بطريقة مبسطة مع أمثلة: " },
+    { cat: "التعلم", title: "اختبرني", prompt: "اطرح عليّ 5 أسئلة لأختبر فهمي في: " },
+    { cat: "التخطيط", title: "خطة أسبوعية", prompt: "ساعدني في إعداد خطة أسبوعية لـ: " },
+    { cat: "التخطيط", title: "تحليل فكرة مشروع", prompt: "حلّل فكرة مشروعي وأعطني نقاط القوة والضعف: " }
+  ];
+
+  const COMMANDS = [
+    { cmd: "/summarize", hint: "تلخيص المحادثة" },
+    { cmd: "/translate", hint: "ترجمة النص" },
+    { cmd: "/code", hint: "مساعدة برمجية" },
+    { cmd: "/improve", hint: "تحسين النص" }
+  ];
 
   const $ = (id) => document.getElementById(id);
-  const sidebar = $("sidebar"), overlay = $("overlay"), chatList = $("chatList");
-  const welcome = $("welcome"), messagesEl = $("messages"), scroll = $("scroll");
-  const input = $("input"), sendBtn = $("send");
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
 
-  // ===== التخزين =====
-  let state = { chats: [], currentId: null };
+  const sidebar = $("sidebar"), overlay = $("overlay"), chatList = $("chatList"), searchInput = $("searchInput");
+  const welcome = $("welcome"), messagesEl = $("messages"), scroll = $("scroll");
+  const input = $("input"), sendBtn = $("send"), hint = $("hint"), fileInput = $("fileInput");
+  const fileChip = $("fileChip"), micBtn = $("micBtn"), modeSel = $("modeSel"), toastEl = $("toast");
+  const lib = $("library");
+
+  // ===== الحالة والتخزين =====
+  let state = { chats: [], currentId: null, mode: "default" };
   try {
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-    if (saved && Array.isArray(saved.chats)) state = saved;
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if (s && Array.isArray(s.chats)) state = Object.assign(state, s);
   } catch {}
 
+  let attached = null;   // ملف نصي مرفق بالرسالة القادمة
+  let busy = false;      // طلب قيد التنفيذ
+
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {} };
-  const current = () => state.chats.find((c) => c.id === state.currentId) || null;
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const current = () => state.chats.find((c) => c.id === state.currentId) || null;
+
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
+  }
 
   // ===== الشريط الجانبي =====
   function renderSidebar() {
+    const q = searchInput.value.trim().toLowerCase();
     chatList.innerHTML = "";
-    if (!state.chats.length) {
-      const e = document.createElement("div");
-      e.className = "empty-list";
-      e.textContent = "لا توجد محادثات بعد";
-      chatList.appendChild(e);
+    let list = state.chats.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.updated || 0) - (a.updated || 0));
+    if (q) {
+      list = list.filter((c) => c.title.toLowerCase().includes(q) ||
+        c.messages.some((m) => (m.text || "").toLowerCase().includes(q)));
+    }
+    if (!list.length) {
+      chatList.appendChild(el("div", "empty-list", q ? "لا توجد نتائج" : "لا توجد محادثات بعد"));
       return;
     }
-    state.chats.forEach((c) => {
-      const item = document.createElement("div");
-      item.className = "chat-item" + (c.id === state.currentId ? " active" : "");
+    let pinShown = false, recentShown = false;
+    list.forEach((c) => {
+      if (c.pinned && !pinShown) { chatList.appendChild(el("div", "section-label", "مثبتة")); pinShown = true; }
+      if (!c.pinned && !recentShown) { chatList.appendChild(el("div", "section-label", "الأخيرة")); recentShown = true; }
 
-      const title = document.createElement("button");
-      title.className = "chat-title";
-      title.textContent = c.title;
+      const item = el("div", "chat-item" + (c.id === state.currentId ? " active" : ""));
+      const title = el("button", "chat-title", c.title);
       title.addEventListener("click", () => { openChat(c.id); closeSidebar(); });
 
-      const del = document.createElement("button");
-      del.className = "chat-del";
+      const pin = el("button", "chat-act" + (c.pinned ? " on" : ""), "📌");
+      pin.title = c.pinned ? "إلغاء التثبيت" : "تثبيت";
+      pin.addEventListener("click", (e) => { e.stopPropagation(); c.pinned = !c.pinned; save(); renderSidebar(); });
+
+      const del = el("button", "chat-act del", "✕");
       del.title = "حذف";
-      del.textContent = "✕";
       del.addEventListener("click", (e) => { e.stopPropagation(); deleteChat(c.id); });
 
-      item.append(title, del);
+      item.append(title, pin, del);
       chatList.appendChild(item);
     });
   }
 
-  function newChat() {
+  function newChatAction() {
+    if (busy) return;
     state.currentId = null;
+    attached = null;
     save();
     renderAll();
     input.focus();
   }
 
   function openChat(id) {
+    if (busy) return;
     state.currentId = id;
     save();
     renderAll();
@@ -262,137 +391,418 @@
     }
     welcome.style.display = "none";
     messagesEl.classList.add("active");
-    chat.messages.forEach((m) => messagesEl.appendChild(buildRow(m.role, m.text, m.error)));
+    chat.messages.forEach((m, i) => messagesEl.appendChild(buildRow(m, i)));
     scrollToEnd();
   }
 
-  function buildRow(role, text, isError) {
-    const row = document.createElement("div");
+  function scrollToEnd() { scroll.scrollTop = scroll.scrollHeight; }
 
-    if (role === "user") {
-      row.className = "row user";
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-      row.appendChild(bubble);
-      return row;
-    }
+  function makeAvatar() {
+    const a = el("div", "avatar");
+    const img = el("img");
+    img.src = "icon.png";
+    img.alt = "";
+    a.appendChild(img);
+    return a;
+  }
 
-    row.className = "row assistant" + (isError ? " error" : "");
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.innerHTML = '<img src="icon.png" alt="" width="30" height="30">';
+  function buildRow(m, i) {
+    if (m.role === "user") return buildUserRow(m, i);
+    if (m.role === "error") return buildErrorRow(m);
+    return buildAssistantRow(m, i);
+  }
 
-    const body = document.createElement("div");
-    body.className = "body";
-    const content = document.createElement("div");
-    content.className = "text";
-    content.textContent = text;
+  function buildUserRow(m, i) {
+    const row = el("div", "row user");
+    const wrap = el("div", "user-wrap");
+    if (m.file) wrap.appendChild(el("div", "file-tag", "📄 " + m.file.name));
+    wrap.appendChild(el("div", "bubble", m.text));
+    const edit = el("button", "mini", "✎ تعديل");
+    edit.addEventListener("click", () => startEdit(wrap, m, i));
+    wrap.appendChild(edit);
+    row.appendChild(wrap);
+    return row;
+  }
+
+  function startEdit(wrap, m, i) {
+    if (busy) return;
+    wrap.innerHTML = "";
+    const ta = el("textarea", "edit-box");
+    ta.value = m.text;
+    ta.rows = 3;
+    const bar = el("div", "actions");
+    const ok = el("button", "mini primary", "إرسال");
+    const cancel = el("button", "mini", "إلغاء");
+    ok.addEventListener("click", () => { const t = ta.value.trim(); if (t) editAndResend(i, t); });
+    cancel.addEventListener("click", () => renderMessages());
+    bar.append(ok, cancel);
+    wrap.append(ta, bar);
+    ta.focus();
+  }
+
+  function editAndResend(i, text) {
+    const chat = current();
+    if (!chat) return;
+    const old = chat.messages[i];
+    chat.messages = chat.messages.slice(0, i);
+    chat.messages.push({ id: uid(), role: "user", text, file: old.file || null });
+    chat.updated = Date.now();
+    save();
+    renderMessages();
+    generate();
+  }
+
+  function buildErrorRow(m) {
+    const row = el("div", "row assistant error");
+    const body = el("div", "body");
+    body.appendChild(el("div", "text", m.text));
+    const bar = el("div", "actions");
+    bar.appendChild(actBtn("↻ إعادة المحاولة", retryLast));
+    body.appendChild(bar);
+    row.append(makeAvatar(), body);
+    return row;
+  }
+
+  function buildAssistantRow(m, i) {
+    const row = el("div", "row assistant");
+    const body = el("div", "body");
+    const content = el("div", "text");
+    renderContent(content, m.text, m);
     body.appendChild(content);
 
-    if (!isError) {
-      const actions = document.createElement("div");
-      actions.className = "actions";
-      const copy = document.createElement("button");
-      copy.textContent = "⧉ نسخ";
-      copy.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          copy.textContent = "✓ تم النسخ";
-          setTimeout(() => (copy.textContent = "⧉ نسخ"), 1500);
-        } catch {}
+    const bar = el("div", "actions");
+    bar.appendChild(actBtn("⧉ نسخ", () => copyText(m.text)));
+    bar.appendChild(actBtn("↻ إعادة", () => regenerate(i)));
+    bar.appendChild(actBtn("✂ أقصر", () => send("اختصر ردك السابق مع الحفاظ على الفكرة الأساسية.")));
+    bar.appendChild(actBtn("＋ أوسع", () => send("وسّع ردك السابق بتفصيل أكثر.")));
+    bar.appendChild(actBtn("☑ قائمة مهام", () => { m.checklist = !m.checklist; save(); renderMessages(); }, m.checklist));
+    if ("speechSynthesis" in window) bar.appendChild(actBtn("🔊 استماع", () => speak(m.text)));
+    bar.appendChild(actBtn("👍", () => rate(m, "up"), m.rating === "up"));
+    bar.appendChild(actBtn("👎", () => rate(m, "down"), m.rating === "down"));
+    bar.appendChild(actBtn("💡 أسئلة متابعة", () => followups(i)));
+    body.appendChild(bar);
+
+    if (m.followups && m.followups.length) {
+      const chips = el("div", "chips");
+      m.followups.forEach((q) => {
+        const b = el("button", "chip", q);
+        b.addEventListener("click", () => send(q));
+        chips.appendChild(b);
       });
-      actions.appendChild(copy);
-      body.appendChild(actions);
+      body.appendChild(chips);
     }
 
-    row.append(avatar, body);
+    row.append(makeAvatar(), body);
     return row;
   }
 
-  function addRow(role, text, isError) {
-    messagesEl.classList.add("active");
-    welcome.style.display = "none";
-    const row = buildRow(role, text, isError);
-    messagesEl.appendChild(row);
-    scrollToEnd();
-    return row;
+  function actBtn(label, fn, active) {
+    const b = el("button", "mini" + (active ? " on" : ""), label);
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  // ===== عرض المحتوى: نصوص، أكواد، وقوائم مهام =====
+  function renderContent(container, text, msg) {
+    const parts = [];
+    const re = /```(\w*)\n?([\s\S]*?)```/g;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) parts.push({ type: "text", value: text.slice(last, m.index) });
+      parts.push({ type: "code", lang: m[1], value: m[2].replace(/\n$/, "") });
+      last = re.lastIndex;
+    }
+    if (last < text.length) parts.push({ type: "text", value: text.slice(last) });
+
+    parts.forEach((p) => {
+      if (p.type === "code") {
+        container.appendChild(buildCode(p.lang, p.value));
+      } else if (msg && msg.checklist) {
+        container.appendChild(buildChecklist(p.value, msg));
+      } else {
+        const v = p.value.replace(/^\n+|\n+$/g, "");
+        if (v) container.appendChild(el("div", "plain", v));
+      }
+    });
+  }
+
+  function buildCode(lang, code) {
+    const box = el("div", "codebox");
+    const head = el("div", "cb-head");
+    head.appendChild(el("span", "", lang || "code"));
+    const cp = el("button", "mini", "⧉ نسخ");
+    cp.addEventListener("click", () => copyText(code, cp));
+    head.appendChild(cp);
+    const pre = el("pre");
+    pre.appendChild(el("code", "", code));
+    box.append(head, pre);
+    return box;
+  }
+
+  function buildChecklist(text, msg) {
+    const wrap = el("div", "checklist");
+    msg.checked = msg.checked || {};
+    text.split("\n").forEach((line) => {
+      if (!line.trim()) return;
+      const m = line.match(/^\s*(?:\d+[.)]|[-*•])\s+(.*)$/);
+      if (!m) { wrap.appendChild(el("div", "plain", line)); return; }
+      const label = el("label", "check-item");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!msg.checked[m[1]];
+      label.classList.toggle("done", cb.checked);
+      cb.addEventListener("change", () => {
+        msg.checked[m[1]] = cb.checked;
+        label.classList.toggle("done", cb.checked);
+        save();
+      });
+      label.append(cb, el("span", "", m[1]));
+      wrap.appendChild(label);
+    });
+    return wrap;
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) { btn.textContent = "✓ تم"; setTimeout(() => (btn.textContent = "⧉ نسخ"), 1500); }
+      else toast("تم النسخ");
+    }).catch(() => toast("تعذّر النسخ"));
+  }
+
+  function rate(m, value) {
+    m.rating = m.rating === value ? null : value;
+    save();
+    renderMessages();
+    toast(m.rating === "up" ? "شكرًا على تقييمك" : m.rating === "down" ? "سنحاول التحسين" : "تم إلغاء التقييم");
+  }
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/```[\s\S]*?```/g, " "));
+    u.lang = "ar-SA";
+    speechSynthesis.speak(u);
   }
 
   function showTyping() {
-    const row = document.createElement("div");
-    row.className = "row assistant";
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.innerHTML = '<img src="icon.png" alt="" width="30" height="30">';
-    const body = document.createElement("div");
-    body.className = "body";
-    const t = document.createElement("div");
-    t.className = "text typing";
-    const dots = document.createElement("span");
-    dots.className = "dots";
-    t.appendChild(dots);
+    const row = el("div", "row assistant");
+    const body = el("div", "body");
+    const t = el("div", "text typing");
+    t.append("Astra B يحضّر الإجابة ");
+    t.appendChild(el("span", "dots"));
     body.appendChild(t);
-    row.append(avatar, body);
+    row.append(makeAvatar(), body);
     messagesEl.appendChild(row);
     scrollToEnd();
     return row;
   }
 
-  function scrollToEnd() {
-    scroll.scrollTop = scroll.scrollHeight;
+  function renderFileChip() {
+    fileChip.innerHTML = "";
+    if (!attached) { fileChip.classList.remove("show"); return; }
+    fileChip.classList.add("show");
+    fileChip.appendChild(el("span", "", "📄 " + attached.name));
+    const x = el("button", "", "✕");
+    x.addEventListener("click", () => { attached = null; renderFileChip(); });
+    fileChip.appendChild(x);
   }
 
   function renderAll() {
     renderSidebar();
     renderMessages();
+    renderFileChip();
   }
 
-  // ===== الإرسال =====
-  async function ask(text) {
-    if (!current()) {
-      const chat = { id: uid(), title: text.slice(0, 40), messages: [] };
-      state.chats.unshift(chat);
-      state.currentId = chat.id;
-      renderSidebar();
-    }
+  // ===== الاتصال بالخادم =====
+  function apiMessages(chat) {
+    return chat.messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(-30)
+      .map((m) => ({
+        role: m.role,
+        text: m.file ? `الملف "${m.file.name}":\n\`\`\`\n${m.file.content}\n\`\`\`\n\n${m.text}` : m.text
+      }));
+  }
+
+  async function callApi(body) {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `تعذّر الرد (رمز ${res.status}).`);
+    return data.reply || "";
+  }
+
+  async function generate(task) {
     const chat = current();
-    chat.messages.push({ role: "user", text });
-    save();
-    addRow("user", text);
-    const typing = showTyping();
+    if (!chat) return;
+    busy = true;
     sendBtn.disabled = true;
-
+    const typing = showTyping();
     try {
-      const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chat.messages.slice(-MAX_CONTEXT) })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `تعذّر الرد (رمز ${res.status}).`);
-
+      const reply = await callApi({ messages: apiMessages(chat), mode: state.mode, task: task || null });
       typing.remove();
-      chat.messages.push({ role: "assistant", text: data.reply });
+      chat.messages.push({ id: uid(), role: "assistant", text: reply || "لم أتمكن من توليد رد. حاول مرة أخرى." });
+      chat.updated = Date.now();
       save();
-      addRow("assistant", data.reply);
+      renderMessages();
     } catch (err) {
       typing.remove();
-      chat.messages.pop(); // نحذف رسالة المستخدم الفاشلة لتتمكن من إعادة الإرسال
+      chat.messages.push({ id: uid(), role: "error", text: err.message || "تعذّر الاتصال بالخدمة." });
       save();
-      addRow("assistant", err.message || "تعذّر الاتصال بالخدمة. حاول مرة أخرى.", true);
+      renderMessages();
     } finally {
+      busy = false;
       sendBtn.disabled = false;
       renderSidebar();
     }
   }
 
+  function ensureChat(titleSource) {
+    if (current()) return;
+    const c = { id: uid(), title: (titleSource || "محادثة").slice(0, 40), pinned: false, updated: Date.now(), messages: [] };
+    state.chats.unshift(c);
+    state.currentId = c.id;
+  }
+
+  function send(text) {
+    if (busy) return;
+    ensureChat(text || (attached && attached.name) || "محادثة");
+    const chat = current();
+    const msg = { id: uid(), role: "user", text: text || "" };
+    if (attached) { msg.file = attached; attached = null; renderFileChip(); }
+    chat.messages.push(msg);
+    chat.updated = Date.now();
+    save();
+    renderMessages();
+    renderSidebar();
+    generate();
+  }
+
+  function regenerate(i) {
+    if (busy) return;
+    const chat = current();
+    if (!chat) return;
+    chat.messages = chat.messages.slice(0, i);
+    save();
+    renderMessages();
+    generate();
+  }
+
+  function retryLast() {
+    if (busy) return;
+    const chat = current();
+    if (!chat) return;
+    chat.messages = chat.messages.filter((m) => m.role !== "error");
+    save();
+    renderMessages();
+    generate();
+  }
+
+  async function followups(i) {
+    if (busy) return;
+    const chat = current();
+    if (!chat) return;
+    busy = true;
+    toast("جارٍ اقتراح الأسئلة…");
+    try {
+      const raw = await callApi({ messages: apiMessages({ messages: chat.messages.slice(0, i + 1) }), mode: state.mode, task: "followups" });
+      const list = parseList(raw).slice(0, 3);
+      if (!list.length) { toast("لم أجد اقتراحات، جرّب مرة أخرى"); return; }
+      chat.messages[i].followups = list;
+      save();
+      renderMessages();
+    } catch (err) {
+      toast(err.message || "تعذّر الاقتراح");
+    } finally {
+      busy = false;
+    }
+  }
+
+  function parseList(raw) {
+    const s = raw.indexOf("["), e = raw.lastIndexOf("]");
+    if (s !== -1 && e > s) {
+      try {
+        const arr = JSON.parse(raw.slice(s, e + 1));
+        if (Array.isArray(arr)) return arr.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim());
+      } catch {}
+    }
+    return raw.split("\n").map((l) => l.replace(/^[\s\-*\d.)]+/, "").trim()).filter(Boolean);
+  }
+
+  async function improveText(text) {
+    const src = (text || input.value).trim();
+    if (!src) { toast("اكتب نصًا أولًا"); return; }
+    if (busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    toast("جارٍ تحسين النص…");
+    try {
+      const reply = await callApi({ messages: [{ role: "user", text: src }], task: "improve" });
+      input.value = reply;
+      autoGrow();
+      toast("تم تحسين النص");
+    } catch (err) {
+      toast(err.message || "تعذّر التحسين");
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+    }
+  }
+
+  function summarizeChat() {
+    if (busy) return;
+    const chat = current();
+    if (!chat || !chat.messages.length) { toast("لا توجد محادثة لتلخيصها"); return; }
+    chat.messages.push({ id: uid(), role: "user", text: "لخّص المحادثة" });
+    chat.updated = Date.now();
+    save();
+    renderMessages();
+    generate("summarize");
+  }
+
+  // ===== الأوامر المائلة =====
+  function handleCommand(text) {
+    const m = text.match(/^\/(summarize|translate|code|improve)\b\s*([\s\S]*)$/);
+    if (!m) return false;
+    const cmd = m[1], rest = m[2].trim();
+    if (cmd === "summarize") { summarizeChat(); return true; }
+    if (cmd === "translate") {
+      send("ترجم النص التالي إلى الإنجليزية إذا كان بالعربية، وإلى العربية إذا كان بلغة أخرى:\n" + rest);
+      return true;
+    }
+    if (cmd === "code") { send("اكتب كودًا برمجيًا مع شرح موجز لـ: " + rest); return true; }
+    if (cmd === "improve") { improveText(rest); return true; }
+    return false;
+  }
+
+  function updateHint() {
+    const v = input.value;
+    hint.innerHTML = "";
+    if (!v.startsWith("/") || v.includes(" ")) { hint.classList.remove("show"); return; }
+    const matches = COMMANDS.filter((c) => c.cmd.startsWith(v.toLowerCase()));
+    if (!matches.length) { hint.classList.remove("show"); return; }
+    matches.forEach((c) => {
+      const b = el("button", "hint-item");
+      b.append(el("span", "", c.cmd), el("small", "", c.hint));
+      b.addEventListener("click", () => { input.value = c.cmd + " "; input.focus(); updateHint(); });
+      hint.appendChild(b);
+    });
+    hint.classList.add("show");
+  }
+
+  // ===== الإرسال من صندوق الكتابة =====
   function submit() {
+    if (busy) return;
     const text = input.value.trim();
-    if (!text || sendBtn.disabled) return;
+    if (!text && !attached) return;
     input.value = "";
     autoGrow();
-    ask(text);
+    hint.classList.remove("show");
+    if (text && handleCommand(text)) return;
+    send(text);
   }
 
   function autoGrow() {
@@ -400,25 +810,117 @@
     input.style.height = Math.min(input.scrollHeight, 200) + "px";
   }
 
-  // ===== الجوال =====
-  function openSidebar() { sidebar.classList.add("open"); overlay.classList.add("show"); }
-  function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("show"); }
+  // ===== المكتبة والتصدير =====
+  function openLibrary() {
+    const list = $("libList");
+    list.innerHTML = "";
+    let cat = "";
+    LIBRARY.forEach((it) => {
+      if (it.cat !== cat) { cat = it.cat; list.appendChild(el("div", "lib-cat", cat)); }
+      const b = el("button", "lib-item");
+      b.append(el("strong", "", it.title), el("small", "", it.prompt.trim()));
+      b.addEventListener("click", () => { input.value = it.prompt; autoGrow(); lib.close(); input.focus(); });
+      list.appendChild(b);
+    });
+    lib.showModal();
+  }
+
+  function exportChat(ext) {
+    const chat = current();
+    if (!chat || !chat.messages.length) { toast("لا توجد محادثة لتصديرها"); return; }
+    const lines = [`# ${chat.title}`, ""];
+    chat.messages.forEach((m) => {
+      if (m.role === "error") return;
+      const who = m.role === "user" ? "أنت" : "Astra B";
+      lines.push(`**${who}:**`, "", m.text, "");
+    });
+    let content = lines.join("\n");
+    if (ext === "txt") content = content.replace(/\*\*/g, "").replace(/^# /m, "");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = el("a");
+    a.href = url;
+    a.download = (chat.title.replace(/[\\/:*?"<>|]/g, "_") || "chat") + "." + ext;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // ===== الإملاء الصوتي =====
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recog = null, listening = false;
+  if (!SR) micBtn.style.display = "none";
+  micBtn.addEventListener("click", () => {
+    if (!SR) { toast("المتصفح لا يدعم الإملاء الصوتي"); return; }
+    if (listening) { recog && recog.stop(); return; }
+    recog = new SR();
+    recog.lang = "ar-SA";
+    recog.interimResults = false;
+    recog.onresult = (e) => {
+      const t = e.results[0][0].transcript;
+      input.value = (input.value ? input.value + " " : "") + t;
+      autoGrow();
+    };
+    recog.onend = () => { listening = false; micBtn.classList.remove("on"); };
+    recog.onerror = () => { listening = false; micBtn.classList.remove("on"); toast("تعذّر الاستماع"); };
+    recog.start();
+    listening = true;
+    micBtn.classList.add("on");
+  });
+
+  // ===== الملفات النصية =====
+  $("attachBtn").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files[0];
+    fileInput.value = "";
+    if (!f) return;
+    if (f.size > MAX_FILE) { toast("الملف كبير، الحد 40 كيلوبايت"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      attached = { name: f.name, content: String(reader.result) };
+      renderFileChip();
+      toast("تم إرفاق الملف");
+    };
+    reader.onerror = () => toast("تعذّر قراءة الملف");
+    reader.readAsText(f);
+  });
 
   // ===== الأحداث =====
   sendBtn.addEventListener("click", submit);
-  input.addEventListener("input", autoGrow);
+  $("improveBtn").addEventListener("click", () => improveText());
+  input.addEventListener("input", () => { autoGrow(); updateHint(); });
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
   });
   welcome.addEventListener("click", (e) => {
     const card = e.target.closest("button[data-prompt]");
-    if (card) ask(card.dataset.prompt);
+    if (card) send(card.dataset.prompt);
   });
-  $("newChat").addEventListener("click", () => { newChat(); closeSidebar(); });
+  $("newChat").addEventListener("click", () => { newChatAction(); closeSidebar(); });
   $("toggleSide").addEventListener("click", () => {
     sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
   });
   overlay.addEventListener("click", closeSidebar);
+  searchInput.addEventListener("input", renderSidebar);
+  modeSel.addEventListener("change", () => { state.mode = modeSel.value; save(); toast("تم تغيير الأسلوب"); });
+  $("summaryBtn").addEventListener("click", summarizeChat);
+  $("libBtn").addEventListener("click", openLibrary);
+  $("libLink").addEventListener("click", openLibrary);
+  $("libClose").addEventListener("click", () => lib.close());
+  $("exportMd").addEventListener("click", () => exportChat("md"));
+  $("exportTxt").addEventListener("click", () => exportChat("txt"));
+
+  // اختصارات لوحة المفاتيح
+  document.addEventListener("keydown", (e) => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); newChatAction(); }
+    else if (mod && e.key === "/") { e.preventDefault(); input.focus(); }
+    else if (e.key === "Escape") { closeSidebar(); if (lib.open) lib.close(); }
+  });
+
+  function openSidebar() { sidebar.classList.add("open"); overlay.classList.add("show"); }
+  function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("show"); }
 
   // ===== شاشة الافتتاح =====
   const splash = $("splash");
@@ -430,9 +932,11 @@
     splash.classList.add("out");
     setTimeout(() => splash.remove(), 700);
   };
-  setTimeout(closeSplash, reduced ? 400 : 2500); // ينتهي الافتتاح عند نحو 3 ثوانٍ
+  setTimeout(closeSplash, reduced ? 400 : 2500);
   splash.addEventListener("click", closeSplash);
 
+  // ===== البدء =====
+  modeSel.value = state.mode || "default";
   renderAll();
   autoGrow();
 })();
