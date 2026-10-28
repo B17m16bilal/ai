@@ -7,6 +7,7 @@
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://astra-b-api.c9824139.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'">
 <title>Astra B</title>
+<link rel="icon" href="icon.png" type="image/png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -70,7 +71,8 @@
   .row { display: flex; gap: 12px; margin-bottom: 22px; }
   .row.user { justify-content: flex-start; }
   .row.user .bubble { background: var(--surface); padding: 10px 16px; border-radius: 22px; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; line-height: 1.75; }
-  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: grid; place-items: center;
+  .avatar img { width: 100%; height: 100%; display: block; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
     font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0; margin-top: 2px; }
   .assistant .body { flex: 1; min-width: 0; }
   .assistant .text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.85; padding-top: 3px; }
@@ -251,7 +253,7 @@
     row.className = "row assistant" + (isError ? " error" : "");
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = "B";
+    avatar.innerHTML = '<img src="icon.png" alt="" width="30" height="30">';
 
     const body = document.createElement("div");
     body.className = "body";
@@ -294,7 +296,7 @@
     row.className = "row assistant";
     const avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = "B";
+    avatar.innerHTML = '<img src="icon.png" alt="" width="30" height="30">';
     const body = document.createElement("div");
     body.className = "body";
     const t = document.createElement("div");
