@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://generativelanguage.googleapis.com https://api.groq.com https://openrouter.ai https://text.pollinations.ai; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://astra-b-api.c9824139.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'">
 <title>Astra B</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,19 +37,6 @@
   .suggestions { max-width: 960px; margin: 14px auto 24px; display: flex; flex-direction: column; gap: 4px; padding: 0 16px; }
   .suggestions button { background: transparent; border: 0; color: var(--muted); text-align: right; padding: 10px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 15px; }
   .suggestions button:hover { background: var(--surface); color: var(--text); }
-  dialog { background: var(--surface); color: var(--text); border: 1px solid #333; border-radius: 14px; padding: 22px; width: min(460px, 92vw); }
-  dialog::backdrop { background: rgba(0,0,0,.6); }
-  dialog h2 { font-size: 18px; margin-bottom: 14px; }
-  dialog label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
-  dialog input, dialog select { width: 100%; background: var(--surface-2); border: 1px solid #333; color: var(--text); border-radius: 10px; padding: 10px; font: inherit; }
-  dialog input { direction: ltr; }
-  dialog textarea { width: 100%; background: var(--surface-2); border: 1px solid #333; color: var(--text); border-radius: 10px; padding: 10px; font: inherit; font-size: 13px; direction: ltr; resize: vertical; }
-  dialog p { font-size: 13px; color: var(--muted); margin: 10px 0; line-height: 1.6; }
-  .hidden { display: none !important; }
-  .row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-  .btn { padding: 9px 16px; border-radius: 10px; border: 1px solid #333; background: var(--surface-2); color: var(--text); cursor: pointer; font: inherit; }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.danger { color: #ff8a8a; }
 </style>
 </head>
 <body>
@@ -57,7 +44,6 @@
   <aside class="sidebar">
     <button class="icon-btn" id="newChat" title="محادثة جديدة">✎</button>
     <button class="icon-btn" id="clearChat" title="مسح المحادثة">🗑</button>
-    <button class="icon-btn" id="openSettings" title="الإعدادات">⚙</button>
   </aside>
   <main>
     <header>
@@ -80,93 +66,25 @@
   </main>
 </div>
 
-<dialog id="settings">
-  <h2>الإعدادات</h2>
-  <label for="provider">مزوّد الذكاء الاصطناعي</label>
-  <select id="provider"></select>
-  <p id="providerNote"></p>
-  <div id="keyBlock">
-    <label for="apiKey">مفتاح API</label>
-    <textarea id="apiKey" rows="5" autocomplete="off" spellcheck="false"></textarea>
-    <p>ضع مفتاحًا في كل سطر. إذا وصل مفتاح إلى حده المسموح، ينتقل التطبيق تلقائيًا للمفتاح التالي. تُحفظ المفاتيح في هذه الجلسة فقط داخل متصفحك، ولا تُرسل إلا إلى خدمة المزوّد المختار.</p>
-  </div>
-  <div class="row">
-    <button class="btn primary" id="saveSettings">حفظ</button>
-    <button class="btn danger" id="forgetKey">حذف المفتاح</button>
-    <button class="btn" id="closeSettings">إغلاق</button>
-  </div>
-</dialog>
-
 <script>
 (() => {
-  // ===== المزوّدون =====
-  const PROVIDERS = {
-    gemini: {
-      label: "Google Gemini (يحتاج مفتاحًا)",
-      needsKey: true,
-      keyHint: "AIza...",
-      note: "يُرسل النص إلى خوادم Google."
-    },
-    groq: {
-      label: "Groq (مفتاح مجاني)",
-      needsKey: true,
-      keyHint: "gsk_...",
-      note: "يُرسل النص إلى خوادم Groq."
-    },
-    openrouter: {
-      label: "OpenRouter (مفتاح مجاني)",
-      needsKey: true,
-      keyHint: "sk-or-...",
-      note: "يُرسل النص إلى خوادم OpenRouter."
-    },
-    pollinations: {
-      label: "Pollinations (بدون مفتاح)",
-      needsKey: false,
-      note: "تنبيه: يُرسل النص إلى خدمة Pollinations التابعة لطرف ثالث، ولا يخضع لنفس ضمانات الخصوصية التي تضمنها الصفحة نفسها."
-    }
-  };
-
-  // أسماء النماذج، تُجرَّب بالترتيب. عدّلها إذا تغيّرت أسماؤها عند المزوّد
-  const MODELS = {
-    gemini: ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"],
-    groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
-    openrouter: ["meta-llama/llama-3.3-70b-instruct:free", "google/gemma-3-27b-it:free"],
-    pollinations: ["openai"]
-  };
-
-  const ENDPOINTS = {
-    groq: "https://api.groq.com/openai/v1/chat/completions",
-    openrouter: "https://openrouter.ai/api/v1/chat/completions",
-    pollinations: "https://text.pollinations.ai/openai"
-  };
-
-  const SYSTEM_PROMPT = "أنت Astra B، مساعد ذكاء اصطناعي صممه المطور مريان بلال. " +
-    "عندما يسألك أحد من أنت أو من صنعك، أجب بأنك Astra B وأن مصممك هو المطور مريان بلال. " +
-    "أجب بالعربية افتراضيًا، إلا إذا كتب المستخدم بلغة أخرى. كن واضحًا ومختصرًا ودقيقًا.";
-
-  const HISTORY_KEY = "astra_b_history_v2";
-  const PROVIDER_KEY = "astra_b_provider";
-  const keyStoreName = (pid) => "astra_b_key_" + pid;
+  // رابط الـ Worker الذي يحمل المفاتيح على الخادم. لا توجد مفاتيح في هذا الملف
+  const WORKER_URL = "https://astra-b-api.c9824139.workers.dev";
+  const HISTORY_KEY = "astra_b_history_v3";
 
   const $ = (id) => document.getElementById(id);
   const welcome = $("welcome"), messagesEl = $("messages"), input = $("input");
-  const sendBtn = $("send"), suggestions = $("suggestions"), settings = $("settings");
-  const providerSel = $("provider"), providerNote = $("providerNote");
-  const keyBlock = $("keyBlock"), apiKeyInput = $("apiKey");
+  const sendBtn = $("send"), suggestions = $("suggestions");
 
   let history = [];
   try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { history = []; }
 
-  let currentProvider = localStorage.getItem(PROVIDER_KEY) || "gemini";
-  if (!PROVIDERS[currentProvider]) currentProvider = "gemini";
-
-  const getKey = (pid) => sessionStorage.getItem(keyStoreName(pid)) || "";
   const saveHistory = () => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch {} };
 
   function addMessage(role, text, cls = "") {
     const div = document.createElement("div");
     div.className = `msg ${role === "user" ? "user" : ""} ${cls}`.trim();
-    div.textContent = text;
+    div.textContent = text; // textContent: لا يتم تنفيذ أي HTML
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return div;
@@ -184,103 +102,7 @@
     history.forEach((m) => addMessage(m.role === "user" ? "user" : "assistant", m.text));
   }
 
-  // ===== قائمة النماذج =====
-  // Groq: نجلب النماذج المتاحة لحسابك فعلًا، ونستبعد نماذج الصوت والحماية غير المناسبة للدردشة
-  let groqModels = null;
-  async function getGroqModels() {
-    if (groqModels) return groqModels;
-    try {
-      const res = await fetch("https://api.groq.com/openai/v1/models", {
-        headers: { Authorization: "Bearer " + getKey("groq") }
-      });
-      const json = await res.json();
-      const ids = (json.data || []).map((m) => m.id)
-        .filter((id) => !/whisper|tts|guard|embed|orpheus|prompt/i.test(id));
-      if (ids.length) {
-        groqModels = ids.slice(0, 8);
-        return groqModels;
-      }
-    } catch {}
-    return MODELS.groq;
-  }
-
-  // OpenRouter تغيّر النماذج المجانية باستمرار، لذلك نجلب القائمة الحالية تلقائيًا
-  let openRouterFree = null;
-  async function getModels(pid) {
-    if (pid === "groq") return await getGroqModels();
-    if (pid !== "openrouter") return MODELS[pid];
-    if (openRouterFree) return openRouterFree;
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/models");
-      const json = await res.json();
-      const ids = (json.data || []).map((m) => m.id).filter((id) => id.endsWith(":free"));
-      if (ids.length) {
-        openRouterFree = ids.slice(0, 8);
-        return openRouterFree;
-      }
-    } catch {}
-    return MODELS[pid];
-  }
-
-  // ===== استدعاء المزوّد =====
-  async function callProvider(pid, key, messages) {
-    const p = PROVIDERS[pid];
-    let lastError = "";
-
-    const models = await getModels(pid);
-    const keys = (key || "").split("\n").map((s) => s.trim()).filter(Boolean);
-    if (p.needsKey && !keys.length) throw new Error("لم يتم إدخال أي مفتاح.");
-    for (const key of (keys.length ? keys : [""])) {
-    for (const model of models) {
-      let url, headers, body;
-
-      if (pid === "gemini") {
-        url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-        headers = { "Content-Type": "application/json", "x-goog-api-key": key };
-        body = {
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.text }] }))
-        };
-      } else {
-        url = ENDPOINTS[pid];
-        headers = { "Content-Type": "application/json" };
-        if (p.needsKey) headers.Authorization = "Bearer " + key;
-        body = {
-          model,
-          messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages.map((m) => ({ role: m.role, content: m.text }))]
-        };
-      }
-
-      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-      const raw = await res.text();
-      let data = null;
-      try { data = JSON.parse(raw); } catch {}
-
-      if (res.ok) {
-        if (pid === "gemini") {
-          return (data?.candidates?.[0]?.content?.parts || []).map((x) => x.text || "").join("").trim();
-        }
-        if (data?.choices) return (data.choices[0]?.message?.content || "").trim();
-        return raw.trim(); // بعض الخدمات تعيد نصًا عاديًا
-      }
-
-      const err = data?.error?.message || (typeof data?.error === "string" ? data.error : "") || raw.slice(0, 200);
-      lastError = err || `رمز ${res.status}`;
-      // 404 يعني أن الاسم غير موجود فنجرب التالي، وأي خطأ آخر نوقف عنده
-      // 401/403: المفتاح غير صالح، و429: وصل المفتاح للحد المسموح. في الحالتين ننتقل للمفتاح التالي
-      if (res.status === 401 || res.status === 403 || res.status === 429) break;
-    }
-    }
-    throw new Error("تعذّر الرد: " + lastError);
-  }
-
   async function ask(text) {
-    const key = getKey(currentProvider);
-    if (PROVIDERS[currentProvider].needsKey && !key) {
-      openSettings();
-      return;
-    }
-
     showChat();
     addMessage("user", text);
     history.push({ role: "user", text });
@@ -288,15 +110,21 @@
     sendBtn.disabled = true;
 
     try {
-      const reply = (await callProvider(currentProvider, key, history)) ||
-        "لم أتمكن من توليد رد. حاول مرة أخرى.";
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history.slice(-30) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `تعذّر الرد (رمز ${res.status}).`);
+
       typing.remove();
-      addMessage("assistant", reply);
-      history.push({ role: "assistant", text: reply });
+      addMessage("assistant", data.reply);
+      history.push({ role: "assistant", text: data.reply });
       saveHistory();
     } catch (err) {
       typing.remove();
-      addMessage("assistant", err.message || "حدث خطأ غير متوقع.", "error");
+      addMessage("assistant", err.message || "تعذّر الاتصال بالخدمة. حاول مرة أخرى.", "error");
       history.pop();
       saveHistory();
     } finally {
@@ -317,38 +145,6 @@
     input.style.height = Math.min(input.scrollHeight, 160) + "px";
   }
 
-  // ===== الإعدادات =====
-  function fillProviders() {
-    providerSel.innerHTML = "";
-    Object.entries(PROVIDERS).forEach(([id, p]) => {
-      const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = p.label;
-      providerSel.appendChild(opt);
-    });
-  }
-
-  function refreshProviderUI(pid) {
-    const p = PROVIDERS[pid];
-    providerSel.value = pid;
-    providerNote.textContent = p.note;
-    keyBlock.classList.toggle("hidden", !p.needsKey);
-    apiKeyInput.placeholder = p.keyHint || "";
-    apiKeyInput.value = getKey(pid);
-  }
-
-  function openSettings() {
-    fillProviders();
-    refreshProviderUI(currentProvider);
-    settings.showModal();
-  }
-
-  providerSel.addEventListener("change", () => {
-    // نحفظ المفتاح الذي كُتب قبل التبديل، ثم نعرض مفتاح المزوّد الجديد
-    refreshProviderUI(providerSel.value);
-  });
-
-  // ===== الأحداث =====
   sendBtn.addEventListener("click", submit);
   input.addEventListener("input", autoGrow);
   input.addEventListener("keydown", (e) => {
@@ -367,20 +163,6 @@
   });
   $("clearChat").addEventListener("click", () => {
     if (confirm("هل تريد مسح المحادثة الحالية؟")) $("newChat").click();
-  });
-  $("openSettings").addEventListener("click", openSettings);
-  $("closeSettings").addEventListener("click", () => settings.close());
-  $("saveSettings").addEventListener("click", () => {
-    const pid = providerSel.value;
-    currentProvider = pid;
-    localStorage.setItem(PROVIDER_KEY, pid);
-    const k = apiKeyInput.value.trim();
-    if (PROVIDERS[pid].needsKey && k) sessionStorage.setItem(keyStoreName(pid), k);
-    settings.close();
-  });
-  $("forgetKey").addEventListener("click", () => {
-    sessionStorage.removeItem(keyStoreName(providerSel.value));
-    apiKeyInput.value = "";
   });
 
   renderHistory();
